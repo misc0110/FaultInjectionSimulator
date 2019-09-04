@@ -4,7 +4,7 @@ VICTIMPROGS = $(patsubst %.c,%,$(VICTIMSRCS))
 all: simulator $(VICTIMPROGS)
 
 simulator: simulator.c
-	gcc simulator.c -o simluator
+	gcc simulator.c -o simulator
 
 
 %: %.c
