@@ -7,6 +7,9 @@ A simple framework to simulate fault attacks on x86 binaries.
 The simulator loads a statically-compiled x86 ELF binary and a "fault" script. The fault script contains commands for the simulator to induce certain kinds of faults (see Fault Script). The simulator simply runs the binary, and induces the faults as specified in the fault script.
 
 The behavior of the simulator can be configured directly via the victim binaries. A victim binary can contain configuration options for the simulator (see Configuration).
+For example, to run a demo victim:
+
+    ./simulator demos/victim1.fault demos/victim1
 
 
 ## Fault Script
@@ -127,10 +130,10 @@ For the `skip` command it is possible to restrict the range of skippable bytes. 
 
 ### Reliability
 
-It is possible to define a probability with with a fault will not be induced. `FAILEVERY=<faults>` defines that on average 1 out of <faults> faults fails. For example, with `FAULT_CONFIG("FAILEVERY=2");`, 50% of all faults are not induced.
-Additionally, `COOLDOWN=<instruction>` defines that after inducing a fault, it takes <instruction> instructions until another fault can be induced.
+It is possible to define a probability with with a fault will not be induced. `FAILEVERY=<faults>` defines that on average 1 out of <faults> faults fails. For example, with `FAULT_CONFIG("FAILEVERY=2");`, 50% of all faults are not induced. By default, all faults are successful.
+Additionally, `COOLDOWN=<instruction>` defines that after inducing a fault, it takes <instruction> instructions until another fault can be induced. By default, there is no cooldown.
 
 ## Miscellaneous
 
-A binary can define a timeout in seconds after which it is terminated: `TIMEOUT=<seconds>`. If the binary runs into the timeout, the exploit is considered to be unsuccessful.
+A binary can define a timeout in seconds after which it is terminated: `TIMEOUT=<seconds>`. If the binary runs into the timeout, the exploit is considered to be unsuccessful. The default timeout is 30 seconds.
 To ensure reproducibility, the seed for the random function (used e.g. in `havoc`) can be fixed with `SEED=<seed>`. The default seed is `time(NULL)`.
