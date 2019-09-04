@@ -26,6 +26,7 @@ static int commands_len = 0;
 static const char* command_name[__FAULT_END__];
 
 static size_t instruction_counter = 0;
+static size_t fault_cooldown = 0;
 
 static size_t start_time;
 
@@ -214,6 +215,7 @@ void parse_config(char* binary) {
             if(!strncmp(conf, "TIMEOUT=", 8)) config.timeout = atoi(conf + 8);
             if(!strncmp(conf, "FAILEVERY=", 10)) config.fail_every = atoi(conf + 10);
             if(!strncmp(conf, "SEED=", 5)) config.seed = atoi(conf + 5);
+            if(!strncmp(conf, "COOLDOWN=", 9)) config.cooldown = strtoull(conf + 9, NULL, 0);
 
             DEBUG("Config: %s\n", conf);
         }
@@ -259,9 +261,20 @@ int ptrace_instruction_pointer(int pid) {
             }
         }
     }
+
+    if(fault_cooldown) fault_cooldown--;
+
     for(i = 0; i < commands_count; i++) {
         if((commands[i].position == RIP && commands[i].rip == regs.rip)
             || (commands[i].position == INSTRUCTION && instruction_counter == commands[i].instruction)) {
+
+            if(fault_cooldown) {
+                DEBUG("Cooldown - skipping fault '%s'\n", command_name[commands[i].type]);
+                if(log_fault) printf("Cannot induce fault '%s' - last fault was too recent\n", command_name[commands[i].type]);
+                continue;
+            }
+
+            fault_cooldown = config.cooldown;
 
             if(config.fail_every > 0) {
                 if((rand() % config.fail_every) == 0) {
@@ -291,6 +304,7 @@ int ptrace_instruction_pointer(int pid) {
                 val ^= 1ull << commands[i].index;
                 ptrace(PTRACE_POKEDATA, pid, commands[i].destination, val);
             }
+
         }
     }
 

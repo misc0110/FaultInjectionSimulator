@@ -51,6 +51,7 @@ typedef struct {
     int timeout;
     size_t fail_every;
     int seed;
+    size_t cooldown;
 } Config;
 
 
