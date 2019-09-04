@@ -210,6 +210,8 @@ void parse_config(char* binary) {
             if(!strcmp(conf, "NOLOGFAULT")) config.log_blacklist |= LOG_FAULT;
             if(!strcmp(conf, "NOLOGRIP")) config.log_blacklist |= LOG_RIP;
             if(!strcmp(conf, "NOLOGINSTRUCTION")) config.log_blacklist |= LOG_INSTRUCTION;
+            if(!strcmp(conf, "NORIPTRIGGER")) config.position_blacklist |= RIP;
+            if(!strcmp(conf, "NOINSTRUCTIONTRIGGER")) config.position_blacklist |= INSTRUCTION;
             if(!strncmp(conf, "MINSKIP=", 8)) config.skip_min = atoi(conf + 8);
             if(!strncmp(conf, "MAXSKIP=", 8)) config.skip_max = atoi(conf + 8);
             if(!strncmp(conf, "TIMEOUT=", 8)) config.timeout = atoi(conf + 8);
