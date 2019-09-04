@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <faultconfig.h>
 
 volatile int is_admin = 0;
 
@@ -12,3 +13,6 @@ int main() {
     }
 
 }
+
+FAULT_CONFIG("NOHAVOC");
+FAULT_CONFIG("NOSKIP");

@@ -39,6 +39,7 @@ typedef struct {
         size_t instruction;
     };
     size_t index;
+    size_t destination;
 } Command;
 
 typedef struct {
