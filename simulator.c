@@ -227,7 +227,7 @@ void parse_config(char* binary) {
 }
 
 // ------------------------------------------------------------------------------------------------
-void fprint_wait_status(FILE *stream, int status) {
+void show_status(int status) {
     if(WIFSTOPPED(status)) {
         DEBUG("Child stopped: %d\n", WSTOPSIG(status));
     }
@@ -368,7 +368,7 @@ int main(int argc, char ** argv, char **envp) {
     } else {
         // fault simulator
         waitpid(pid, &status, 0);
-        fprint_wait_status(stderr,status);
+        show_status(status);
         start_time = time(NULL);
         while(WIFSTOPPED(status)) {
             if(ptrace_instruction_pointer(pid)) {
@@ -376,7 +376,7 @@ int main(int argc, char ** argv, char **envp) {
             }
             status = singlestep(pid);
         }
-        fprint_wait_status(stderr, status);
+        show_status(status);
         DEBUG("Detaching\n");
         ptrace(PTRACE_DETACH, pid, 0, 0);
 
