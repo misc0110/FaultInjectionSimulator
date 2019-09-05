@@ -15,5 +15,5 @@ int main() {
     return 1;
 }
 
-FAULT_CONFIG("TIMEOUT=1");
+FAULT_CONFIG("TIMEOUT=5");
 FAULT_CONFIG("NOLOGFAULT");
