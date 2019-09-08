@@ -13,6 +13,8 @@
 
 #include "simulator.h"
 
+// #define CONFIG_CACHE
+
 // ------------------------------------------------------------------------------------------------
 static Config config = {
     .skip_min = -15,
@@ -207,12 +209,14 @@ int parse_script(char* file) {
     while(getline(&line, &len, f) != -1) {
         if(parse_command(line, ++line_nr)) {
             ERROR(TAG_LINE "Could not parse command '%s'\n", line_nr, line);
+            free(line);
             return 1;
         }
         free(line);
         line = NULL;
         len = 0;
     }
+    free(line);
 
     fclose(f);
     return 0;
@@ -223,23 +227,33 @@ void parse_config(char* binary) {
     char config_cache[128];
     FILE* f;
     snprintf(config_cache, sizeof(config_cache), "%s.confcache", binary);
+#ifdef CONFIG_CACHE
     f = fopen(config_cache, "rb");
     if(f) {
         fread(&config, sizeof(config), 1, f);
         fclose(f);
         return;
     }
+#endif
     f = fopen(binary, "rb");
     if(!f) return;
     fseek(f, 0, SEEK_END);
     size_t fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
+    if(fsize < 128) {
+        fclose(f);
+        return;
+    }
     char* elf = (char*)malloc(fsize);
     if(!elf) {
         fclose(f);
         return;
     }
-    fread(elf, fsize, 1, f);
+    if(fread(elf, fsize, 1, f) != 1) {
+        free(elf);
+        fclose(f);
+        return;
+    }
     for(size_t i = 0; i < fsize - 24; i++) {
         if(!strcmp(elf + i, "FAULTCONFIG")) {
             char* conf = elf + i + 12;
@@ -266,11 +280,13 @@ void parse_config(char* binary) {
     free(elf);
     fclose(f);
 
+#ifdef CONFIG_CACHE
     f = fopen(config_cache, "wb");
     if(f) {
         fwrite(&config, sizeof(config), 1, f);
         fclose(f);
     }
+#endif
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -439,6 +455,7 @@ int main(int argc, char ** argv, char **envp) {
         kill(pid, 2);
         usleep(1000);
         kill(pid, 9);
+        free(commands);
 
         if(WIFEXITED(status) && WEXITSTATUS(status) == 0) {
             printf("\n\033[92mSuccessfully exploited %s!\033[0m\n", program);
