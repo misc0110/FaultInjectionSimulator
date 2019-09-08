@@ -133,7 +133,7 @@ For the `skip` command it is possible to restrict the range of skippable bytes. 
 It is possible to define a probability with with a fault will not be induced. `FAILEVERY=<faults>` defines that on average 1 out of <faults> faults fails. For example, with `FAULT_CONFIG("FAILEVERY=2");`, 50% of all faults are not induced. By default, all faults are successful.
 Additionally, `COOLDOWN=<instruction>` defines that after inducing a fault, it takes <instruction> instructions until another fault can be induced. By default, there is no cooldown.
 
-## Miscellaneous
+### Miscellaneous
 
 A binary can define a timeout in seconds after which it is terminated: `TIMEOUT=<seconds>`. If the binary runs into the timeout, the exploit is considered to be unsuccessful. The default timeout is 30 seconds.
 To ensure reproducibility, the seed for the random function (used e.g. in `havoc`) can be fixed with `SEED=<seed>`. The default seed is `time(NULL)`.
