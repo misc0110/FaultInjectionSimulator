@@ -436,6 +436,9 @@ int main(int argc, char ** argv, char **envp) {
         show_status(status);
         DEBUG("Detaching\n");
         ptrace(PTRACE_DETACH, pid, 0, 0);
+        kill(pid, 2);
+        usleep(1000);
+        kill(pid, 9);
 
         if(WIFEXITED(status) && WEXITSTATUS(status) == 0) {
             printf("\n\033[92mSuccessfully exploited %s!\033[0m\n", program);
