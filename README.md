@@ -54,7 +54,7 @@ Skip 1 byte when the instruction pointer is at 0x400b51: `skip 1 @0x400b51`
 
     zero <address> <trigger>
 
-Sets the given memory address <address> to 0 when the given trigger <trigger> is reached. The function zeroes out one word (i.e., 32 bit).
+Sets the given memory address <address> to 0 when the given trigger <trigger> is reached. The function zeroes out one byte (i.e., 8 bit).
 
 ##### Example
 Write a zero word to address 0x6bb330 if the instruction pointer reaches 0x400b6e: `zero 0x6bb330 @0x400b6e`
@@ -63,7 +63,7 @@ Write a zero word to address 0x6bb330 if the instruction pointer reaches 0x400b6
 
     havoc <address> <trigger>
 
-Sets the given memory address <address> to a random value when the given trigger <trigger> is reached. The function affects one word (i.e., 32 bit).
+Sets the given memory address <address> to a random value when the given trigger <trigger> is reached. The function affects one byte (i.e., 8 bit).
 
 ##### Example
 Write a random word to address 0x6bb330 if the instruction pointer reaches 0x400b6e: `havoc 0x6bb330 @0x400b6e`

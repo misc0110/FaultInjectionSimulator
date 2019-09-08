@@ -338,13 +338,15 @@ int ptrace_instruction_pointer(int pid) {
                 ptrace(PTRACE_SETREGS, pid, NULL, &regs);
             } else if(commands[i].type == HAVOC) {
                 DEBUG("Havoc 0x%zx @ 0x%zx\n", commands[i].destination, regs.rip);
-                size_t val = rand();
+                size_t val = rand() % 0xff;
                 if(log_fault) printf("HAVOC 0x%zx -> %zd (RIP: 0x%zx, Instruction #%zd)\n", commands[i].destination, val, (size_t)regs.rip, instruction_counter);
-                ptrace(PTRACE_POKEDATA, pid, commands[i].destination, val);
+                long oldval = ptrace(PTRACE_PEEKDATA, pid, commands[i].destination, 0);
+                ptrace(PTRACE_POKEDATA, pid, commands[i].destination, (oldval & ~0xff) | (val & 0xff));
             } else if(commands[i].type == ZERO) {
                 DEBUG("Zero 0x%zx @ 0x%zx\n", commands[i].destination, regs.rip);
                 if(log_fault) printf("ZERO 0x%zx (RIP: 0x%zx, Instruction #%zd)\n", commands[i].destination, (size_t)regs.rip, instruction_counter);
-                ptrace(PTRACE_POKEDATA, pid, commands[i].destination, 0);
+                long oldval = ptrace(PTRACE_PEEKDATA, pid, commands[i].destination, 0);
+                ptrace(PTRACE_POKEDATA, pid, commands[i].destination, oldval & ~0xff);
             } else if(commands[i].type == BITFLIP) {
                 DEBUG("Bitflip #%d -> 0x%zx @ 0x%zx\n", commands[i].index, commands[i].destination, regs.rip);
                 if(log_fault) printf("BITFLIP #%d -> 0x%zx (RIP: 0x%zx, Instruction #%zd)\n", (int)commands[i].index, commands[i].destination, (size_t)regs.rip, instruction_counter);
