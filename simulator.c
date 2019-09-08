@@ -220,7 +220,16 @@ int parse_script(char* file) {
 
 // ------------------------------------------------------------------------------------------------
 void parse_config(char* binary) {
-    FILE *f = fopen(binary, "rb");
+    char config_cache[128];
+    FILE* f;
+    snprintf(config_cache, sizeof(config_cache), "%s.confcache", binary);
+    f = fopen(config_cache, "rb");
+    if(f) {
+        fread(&config, sizeof(config), 1, f);
+        fclose(f);
+        return;
+    }
+    f = fopen(binary, "rb");
     if(!f) return;
     fseek(f, 0, SEEK_END);
     size_t fsize = ftell(f);
@@ -256,6 +265,12 @@ void parse_config(char* binary) {
     }
     free(elf);
     fclose(f);
+
+    f = fopen(config_cache, "wb");
+    if(f) {
+        fwrite(&config, sizeof(config), 1, f);
+        fclose(f);
+    }
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -278,8 +293,7 @@ void show_status(int status) {
 int ptrace_instruction_pointer(int pid) {
     struct user_regs_struct regs;
     if(ptrace(PTRACE_GETREGS, pid, NULL, (void*)&regs)) {
-        fprintf(stderr, "Error fetching registers from child process: %s\n",
-            strerror(errno));
+        ERROR("Error fetching registers from child process: %s\n", strerror(errno));
         return 1;
     }
 
@@ -344,7 +358,7 @@ int ptrace_instruction_pointer(int pid) {
 
     instruction_counter++;
 
-    if(time(NULL) - start_time > config.timeout) {
+    if((instruction_counter % 1000) == 0 && (time(NULL) - start_time > config.timeout)) {
         ERROR("Timeout of %zd seconds reached\n", config.timeout);
         return 1;
     }
