@@ -55,8 +55,8 @@ typedef struct {
 } Config;
 
 
-#define ERROR(...) tagged_printf(TAG_ERROR, __VA_ARGS__)
-#define DEBUG(...) tagged_printf(TAG_DEBUG, __VA_ARGS__)
+#define ERROR(...) tagged_printf(TAG_ERROR, 0, __VA_ARGS__)
+#define DEBUG(...) tagged_printf(TAG_DEBUG, 1, __VA_ARGS__)
 
 
 #define DELIMITER " \t\r\n"

@@ -29,11 +29,13 @@ static size_t instruction_counter = 0;
 static size_t fault_cooldown = 0;
 
 static size_t start_time;
+static int debug_level = 0;
 
 
 // ------------------------------------------------------------------------------------------------
-void tagged_printf(const char* tag, const char * format, ...) {
+void tagged_printf(const char* tag, int level, const char * format, ...) {
   va_list args;
+  if(level > debug_level) return;
   fprintf(stderr, "%s", tag);
   va_start(args, format);
   vfprintf(stderr, format, args);
@@ -90,6 +92,26 @@ int parse_position(char* pos, Command* c, size_t line_nr) {
 }
 
 // ------------------------------------------------------------------------------------------------
+int parse_destination(char* pos, Command* c, size_t line_nr) {
+    if(!pos || strlen(pos) == 0) {
+        ERROR(TAG_LINE "No destination given\n", line_nr);
+        return 1;
+    }
+    c->destination = strtoull(pos, NULL, 0);
+    return 0;
+}
+
+// ------------------------------------------------------------------------------------------------
+int parse_index(char* pos, Command* c, size_t line_nr) {
+    if(!pos || strlen(pos) == 0) {
+        ERROR(TAG_LINE "No index given\n", line_nr);
+        return 1;
+    }
+    c->index = atoi(pos);
+    return 0;
+}
+
+// ------------------------------------------------------------------------------------------------
 int parse_command(char* cmd, size_t line_nr) {
     char* command = strtok(cmd, DELIMITER);
     Command c;
@@ -100,7 +122,9 @@ int parse_command(char* cmd, size_t line_nr) {
 
     if(!strcasecmp(command, command_name[SKIP])) {
         c.type = SKIP;
-        c.index = atoi(strtok(NULL, DELIMITER));
+        if(parse_index(strtok(NULL, DELIMITER), &c, line_nr)) {
+            return 1;
+        }
         if((ssize_t)c.index < (ssize_t)config.skip_min) {
             ERROR(TAG_LINE "Skip must be >= %d\n", line_nr, config.skip_min);
             return 1;
@@ -131,20 +155,28 @@ int parse_command(char* cmd, size_t line_nr) {
         }
     } else if(!strcasecmp(command, command_name[HAVOC])) {
         c.type = HAVOC;
-        c.destination = strtoull(strtok(NULL, DELIMITER), NULL, 0);
+        if(parse_destination(strtok(NULL, DELIMITER), &c, line_nr)) {
+            return 1;
+        }
         if(parse_position(strtok(NULL, DELIMITER), &c, line_nr)) {
             return 1;
         }
     } else if(!strcasecmp(command, command_name[ZERO])) {
         c.type = ZERO;
-        c.destination = strtoull(strtok(NULL, DELIMITER), NULL, 0);
+        if(parse_destination(strtok(NULL, DELIMITER), &c, line_nr)) {
+            return 1;
+        }
         if(parse_position(strtok(NULL, DELIMITER), &c, line_nr)) {
             return 1;
         }
     } else if(!strcasecmp(command, command_name[BITFLIP])) {
         c.type = BITFLIP;
-        c.index = atoi(strtok(NULL, DELIMITER));
-        c.destination = strtoull(strtok(NULL, DELIMITER), NULL, 0);
+        if(parse_index(strtok(NULL, DELIMITER), &c, line_nr)) {
+            return 1;
+        }
+        if(parse_destination(strtok(NULL, DELIMITER), &c, line_nr)) {
+            return 1;
+        }
         if(parse_position(strtok(NULL, DELIMITER), &c, line_nr)) {
             return 1;
         }
@@ -336,6 +368,12 @@ int main(int argc, char ** argv, char **envp) {
     pid_t pid;
     int status;
 
+    char* debug_level_str = getenv("DEBUG");
+    if(debug_level_str) {
+        debug_level = atoi(debug_level_str);
+    }
+
+
     if (argc < 3) {
         ERROR("Usage: %s <fault script> <binary> [<arg0> <arg1> ...]\n", argv[0]);
         exit(-1);
@@ -364,7 +402,10 @@ int main(int argc, char ** argv, char **envp) {
             ERROR("Error starting tracer: %s\n", strerror(errno));
             exit(-1);
         }
-        execve(program, child_args, envp);
+        if(execve(program, child_args, envp) == -1) {
+            ERROR("Failed to start binary '%s'\n", program);
+            return -1;
+        }
     } else {
         // fault simulator
         waitpid(pid, &status, 0);
