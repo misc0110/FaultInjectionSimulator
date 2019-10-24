@@ -137,3 +137,5 @@ Additionally, `COOLDOWN=<instruction>` defines that after inducing a fault, it t
 
 A binary can define a timeout in seconds after which it is terminated: `TIMEOUT=<seconds>`. If the binary runs into the timeout, the exploit is considered to be unsuccessful. The default timeout is 30 seconds.
 To ensure reproducibility, the seed for the random function (used e.g. in `havoc`) can be fixed with `SEED=<seed>`. The default seed is `time(NULL)`.
+To disable ASLR for a binary, `NOASLR` can be used. 
+

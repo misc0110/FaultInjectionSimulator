@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <time.h>
+#include <sys/personality.h>
 
 #include "simulator.h"
 
@@ -19,7 +20,8 @@
 static Config config = {
     .skip_min = -15,
     .skip_max = 15,
-    .timeout = 30
+    .timeout = 30,
+    .aslr = 1
 };
 
 static Command* commands = NULL;
@@ -262,6 +264,7 @@ void parse_config(char* binary) {
             if(!strcmp(conf, "NOSKIP")) config.fault_blacklist |= SKIP;
             if(!strcmp(conf, "NOBITFLIP")) config.fault_blacklist |= BITFLIP;
             if(!strcmp(conf, "NOLOG")) config.fault_blacklist |= LOG;
+            if(!strcmp(conf, "NOASLR")) config.aslr = 0;
             if(!strcmp(conf, "NOLOGFAULT")) config.log_blacklist |= LOG_FAULT;
             if(!strcmp(conf, "NOLOGRIP")) config.log_blacklist |= LOG_RIP;
             if(!strcmp(conf, "NOLOGINSTRUCTION")) config.log_blacklist |= LOG_INSTRUCTION;
@@ -434,6 +437,11 @@ int main(int argc, char ** argv, char **envp) {
             ERROR("Error starting tracer: %s\n", strerror(errno));
             exit(-1);
         }
+        if(!config.aslr) {
+            // disable aslr
+            personality(ADDR_NO_RANDOMIZE);
+        }
+        
         if(execve(program, child_args, envp) == -1) {
             ERROR("Failed to start binary '%s'\n", program);
             return -1;

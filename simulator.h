@@ -52,6 +52,7 @@ typedef struct {
     size_t fail_every;
     int seed;
     size_t cooldown;
+    int aslr;
 } Config;
 
 
