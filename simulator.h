@@ -53,6 +53,8 @@ typedef struct {
     int seed;
     size_t cooldown;
     int aslr;
+    int beforemain;
+    size_t entry;
 } Config;
 
 

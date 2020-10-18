@@ -21,7 +21,8 @@ static Config config = {
     .skip_min = -15,
     .skip_max = 15,
     .timeout = 30,
-    .aslr = 1
+    .aslr = 1,
+    .beforemain = 0
 };
 
 static Command* commands = NULL;
@@ -270,13 +271,15 @@ void parse_config(char* binary) {
             if(!strcmp(conf, "NOLOGINSTRUCTION")) config.log_blacklist |= LOG_INSTRUCTION;
             if(!strcmp(conf, "NORIPTRIGGER")) config.position_blacklist |= RIP;
             if(!strcmp(conf, "NOINSTRUCTIONTRIGGER")) config.position_blacklist |= INSTRUCTION;
+            if(!strcmp(conf, "BEFOREMAIN")) config.beforemain = 1;
+            if(!strcmp(conf, "ENTRY")) config.entry = *(size_t*)(conf + 6);
             if(!strncmp(conf, "MINSKIP=", 8)) config.skip_min = atoi(conf + 8);
             if(!strncmp(conf, "MAXSKIP=", 8)) config.skip_max = atoi(conf + 8);
             if(!strncmp(conf, "TIMEOUT=", 8)) config.timeout = atoi(conf + 8);
             if(!strncmp(conf, "FAILEVERY=", 10)) config.fail_every = atoi(conf + 10);
             if(!strncmp(conf, "SEED=", 5)) config.seed = atoi(conf + 5);
             if(!strncmp(conf, "COOLDOWN=", 9)) config.cooldown = strtoull(conf + 9, NULL, 0);
-
+            
             DEBUG("Config: %s\n", conf);
         }
     }
@@ -311,9 +314,17 @@ void show_status(int status) {
 // ------------------------------------------------------------------------------------------------
 int ptrace_instruction_pointer(int pid) {
     struct user_regs_struct regs;
+    static int started = 0;
     if(ptrace(PTRACE_GETREGS, pid, NULL, (void*)&regs)) {
         ERROR("Error fetching registers from child process: %s\n", strerror(errno));
         return 1;
+    }
+    
+    if(!started && (((size_t)regs.rip == config.entry) || config.beforemain || !config.entry)) {
+        started = 1;
+    }
+    if(!started) {
+        return 0;
     }
 
     int i, log_fault = 0;
@@ -417,7 +428,7 @@ int main(int argc, char ** argv, char **envp) {
     config.seed = time(NULL);
     char* program = argv[2];
     parse_config(program);
-
+    
     if(parse_script(argv[1])) {
         exit(-1);
     }
