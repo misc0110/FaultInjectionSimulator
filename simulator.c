@@ -11,6 +11,11 @@
 #include <stdarg.h>
 #include <time.h>
 #include <sys/personality.h>
+#include <elf.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <inttypes.h>
 
 #include "simulator.h"
 
@@ -54,6 +59,11 @@ int add_command(Command* c, size_t line_nr) {
         ERROR(TAG_LINE "Command '%s' not allowed for this binary!\n", line_nr, command_name[c->type]);
         return 1;
     }
+    if(config.no_code_fault && (c->type & (BITFLIP | HAVOC | ZERO)) && c->destination >= config.code_start && c->destination < config.code_end) {
+        ERROR(TAG_LINE "Faults in .text section are not allowed!\n", line_nr);
+        return 1;
+    }
+    
     if(commands == NULL) {
         commands_len = 128;
         commands = (Command*)malloc(commands_len * sizeof(Command));
@@ -273,6 +283,7 @@ void parse_config(char* binary) {
             if(!strcmp(conf, "NOINSTRUCTIONTRIGGER")) config.position_blacklist |= INSTRUCTION;
             if(!strcmp(conf, "BEFOREMAIN")) config.beforemain = 1;
             if(!strcmp(conf, "ENTRY")) config.entry = *(size_t*)(conf + 6);
+            if(!strcmp(conf, "NOCODEFAULT")) config.no_code_fault = 1;
             if(!strncmp(conf, "MINSKIP=", 8)) config.skip_min = atoi(conf + 8);
             if(!strncmp(conf, "MAXSKIP=", 8)) config.skip_max = atoi(conf + 8);
             if(!strncmp(conf, "TIMEOUT=", 8)) config.timeout = atoi(conf + 8);
@@ -410,6 +421,40 @@ int singlestep(int pid) {
 }
 
 // ------------------------------------------------------------------------------------------------
+int find_section(char* binary, char* section, size_t* start, size_t* end) {
+    struct stat statbuf;
+    int fd = open(binary, O_RDONLY);
+    if(fd == -1) {
+        return 1;
+    }
+
+    fstat(fd, &statbuf);
+    char *fbase = mmap(NULL, statbuf.st_size, PROT_READ, MAP_SHARED, fd, 0);
+    if(fbase == MAP_FAILED) {
+        return 1;
+    }
+
+    Elf64_Ehdr *ehdr = (Elf64_Ehdr *)fbase;
+    Elf64_Shdr *sects = (Elf64_Shdr *)(fbase + ehdr->e_shoff);
+    int shsize = ehdr->e_shentsize;
+    int shnum = ehdr->e_shnum;
+    int shstrndx = ehdr->e_shstrndx;
+
+    Elf64_Shdr *shstrsect = &sects[shstrndx];
+    char *shstrtab = fbase + shstrsect->sh_offset;
+
+    for(int i = 0; i < shnum; i++) {
+        if(!strcmp(shstrtab+sects[i].sh_name, section)) {
+            *start = sects[i].sh_addr;
+            *end = sects[i].sh_addr + sects[i].sh_size;
+        }
+    }
+    
+    close(fd);
+    return 0;
+}
+
+// ------------------------------------------------------------------------------------------------
 int main(int argc, char ** argv, char **envp) {
     pid_t pid;
     int status;
@@ -428,6 +473,14 @@ int main(int argc, char ** argv, char **envp) {
     config.seed = time(NULL);
     char* program = argv[2];
     parse_config(program);
+    
+    if(config.no_code_fault) {
+        if(find_section(program, ".text", &config.code_start, &config.code_end)) {
+            ERROR("Could not find .text section in target");
+            exit(-1);
+        }
+        DEBUG("Code section from 0x%zx to 0x%zx\n", config.code_start, config.code_end);
+    }
     
     if(parse_script(argv[1])) {
         exit(-1);

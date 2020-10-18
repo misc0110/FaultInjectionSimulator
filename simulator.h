@@ -46,6 +46,7 @@ typedef struct {
     size_t fault_blacklist;
     size_t position_blacklist;
     size_t log_blacklist;
+    int no_code_fault;
     int skip_min;
     int skip_max;
     int timeout;
@@ -55,6 +56,8 @@ typedef struct {
     int aslr;
     int beforemain;
     size_t entry;
+    size_t code_start;
+    size_t code_end;
 } Config;
 
 

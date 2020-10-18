@@ -112,12 +112,13 @@ An example binary with embedded configuration can look like this:
     FAULT_CONFIG("TIMEOUT=3");
     FAULT_CONFIG("FAILEVERY=2");
     FAULT_CONFIG("COOLDOWN=100");
+    FAULT_ENTRY(main);
 
 The following configuration options are supported:
 
 ### Feature Blacklist
 
-Any of the supported commands for fault scripts can be disabled for a binary. Blacklisting a feature is done with the options `NOSKIP`, `NOHAVOC`, `NOZERO`, `NOBITFLIP`, `NOLOG`.
+Any of the supported commands for fault scripts can be disabled for a binary. Blacklisting a feature is done with the options `NOSKIP`, `NOHAVOC`, `NOZERO`, `NOBITFLIP`, `NOLOG`. The features `HAVOC`, `ZERO`, and `BITFLIP` can also be blocked only for the code using `NOCODEFAULT`. 
 
 ### Parameter Blacklist
 
@@ -138,4 +139,5 @@ Additionally, `COOLDOWN=<instruction>` defines that after inducing a fault, it t
 A binary can define a timeout in seconds after which it is terminated: `TIMEOUT=<seconds>`. If the binary runs into the timeout, the exploit is considered to be unsuccessful. The default timeout is 30 seconds.
 To ensure reproducibility, the seed for the random function (used e.g. in `havoc`) can be fixed with `SEED=<seed>`. The default seed is `time(NULL)`.
 To disable ASLR for a binary, `NOASLR` can be used. 
-
+To ensure that the instruction counter is deterministic, `FAULT_ENTRY(function)` allows providing a function at which the simulator start. 
+Typically, this will be `FAULT_ENTRY(main)` to start at `main`. 

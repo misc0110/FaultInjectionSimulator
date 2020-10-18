@@ -18,4 +18,5 @@ int main() {
 
 }
 
+FAULT_CONFIG("NOCODEFAULT");
 FAULT_CONFIG_ENTRY(main);
