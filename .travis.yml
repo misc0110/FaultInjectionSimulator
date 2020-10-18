@@ -1,0 +1,23 @@
+language: c
+compiler: gcc
+ 
+jobs:
+    include:
+        - os: linux
+          dist: xenial
+          arch: amd64
+
+        - os: linux
+          dist: bionic
+          arch: amd64
+
+        - os: linux
+          dist: focal
+          arch: amd64
+
+script:
+    - make
+    - ./simulator demos/victim1.fault demos/victim1 | grep Success
+    - ./simulator demos/victim2.fault demos/victim2 | grep Success
+    - ./simulator demos/victim3.fault demos/victim3 | grep Success
+    - ./simulator demos/victim4.fault demos/victim4 | grep Success
